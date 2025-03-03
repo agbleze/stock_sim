@@ -93,15 +93,20 @@ distance, indices = index.search(img10_emb_arr, k=3)
 
 #%%
 from typing import None, Union, Optional, List
+from faiss import write_index, read_index
+import json
 class SimilarChartSearcher(object):
-    def __init__(self, chart_paths, model_type, index_type, similar_k,
-                 faiss_index_type
+    def __init__(self, chart_paths, model_type, index_type, num_similar_charts: int,
+                 faiss_index_type, vector_index_save_path="vector_index.faiss",
+                 save_charts_path="img_index.json"
                  ):
         self.chart_paths = chart_paths
         self.model_type = model_type
         self.index_type = index_type
-        self.similar_k = similar_k
+        self.num_similar_charts = num_similar_charts
         self.faiss_index_type = faiss_index_type
+        self.vector_index_save_path = vector_index_save_path
+        self.save_charts_path = save_charts_path
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model, self.preprocess = clip.load(model_type, device=device)
         
@@ -131,14 +136,42 @@ class SimilarChartSearcher(object):
         else:
             raise ValueError(f"Index type: {index_type} is not a valid index in faiss")
         
-    def add_embeddings_to_store(self, embeddings: Optional[List]):
-        if not embeddings:
-            if hasattr(self, "embeddings"):
-                embeddings = self.embeddings
-            else:
-                print(f"Generating embeddings ...")
-                embeddings = self.get_embeddings(chart_paths=self.chart_paths)
+    def add_embeddings_to_store(self, #embeddings: Optional[List],
+                                vector_index_save_path: Optional[Union[str, None]]=None,
+                                save_charts_path: Optional[Union[str, None]]=None
+                                ):
+        #if not embeddings:
+        if hasattr(self, "embeddings"):
+            embeddings = self.embeddings
+        else:
+            print(f"Generating embeddings ...")
+            embeddings = self.get_embeddings(chart_paths=self.chart_paths)
+        if hasattr(self, "index"):
+            index = self.index
+        else:
+            index = self.get_faiss_index(index_type=self.index_type)
+        embedding_dimension = embeddings[0].shape[1]
+        index = index(d=embedding_dimension)
         
+        for emb in embeddings:
+            emb_arr = np.array(emb.cpu()).astype(np.float32)
+            index.add(x=emb_arr)
+            if not vector_index_save_path:
+                vector_index_save_path = self.vector_index_save_path
+            write_index(index, vector_index_save_path)
+        if not save_charts_path:
+            save_charts_path = self.save_charts_path
+        with open(save_charts_path, 'w') as f:
+            json.dump(self.chart_paths, f)
+            
+            
+    def get_similar_chart_paths(self, query_chart_path, num_similar_charts: int):     
+        if not num_similar_charts:
+            num_similar_charts = self.num_similar_charts
+        query_embedding = self.get_embeddings(chart_paths=[query_chart_path])
+        distance, locs = index.search(x=query_embedding, k=num_similar_charts)
+        self.similar_chart_paths = [self.chart_paths[loc] for loc in locs[0]]
+        return self.similar_chart_paths
 
 
 # %%
