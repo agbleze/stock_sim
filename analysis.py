@@ -92,14 +92,53 @@ img10_emb_arr = np.array(img10_emb[0].cpu()).astype(np.float32)
 distance, indices = index.search(img10_emb_arr, k=3)
 
 #%%
-
+from typing import None, Union, Optional, List
 class SimilarChartSearcher(object):
-    def __init__(self, charts, model_type, index_type, similar_k):
-        self.charts = charts
+    def __init__(self, chart_paths, model_type, index_type, similar_k,
+                 faiss_index_type
+                 ):
+        self.chart_paths = chart_paths
         self.model_type = model_type
         self.index_type = index_type
         self.similar_k = similar_k
+        self.faiss_index_type = faiss_index_type
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model, self.preprocess = clip.load(model_type, device=device)
+        
+    def get_embeddings(self, chart_paths):
+        embeddings = []
+        for img_path in chart_paths:
+            img = Image.open(img_path)
+            image = self.preprocess(img=img).unsqueeze(0).to(device)
+            with torch.no_grad():
+                image_features = model.encode_image(image)
+                embeddings.append(image_features)
 
+        return embeddings
+
+    def get_faiss_index(self, index_type: Optional[Union[str, None]]=None):
+        if index_type is None:
+            index_type = self.index_type
+        
+        if hasattr(faiss, index_type):
+            index = getattr(faiss, index_type)
+            if callable(index):
+                self.index = index
+                return self.index
+            else:
+                raise ValueError(f"Index type: {index_type} is not a valid callable index in faiss")
+            
+        else:
+            raise ValueError(f"Index type: {index_type} is not a valid index in faiss")
+        
+    def add_embeddings_to_store(self, embeddings: Optional[List]):
+        if not embeddings:
+            if hasattr(self, "embeddings"):
+                embeddings = self.embeddings
+            else:
+                print(f"Generating embeddings ...")
+                embeddings = self.get_embeddings(chart_paths=self.chart_paths)
+        
 
 
 # %%
