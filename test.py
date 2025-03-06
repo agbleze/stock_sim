@@ -6,8 +6,8 @@ import yfinance as yf
 import plotly.express as px
 
 stock = yf.Ticker("IONQ")
-start="2025-03-05"
-end="2025-03-06"
+start="2025-03-06"
+end="2025-03-07"
 hist = stock.history(start=start, 
                         end=end,
                     prepost=True,
