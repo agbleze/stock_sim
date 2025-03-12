@@ -173,8 +173,10 @@ class SimilarChartSearcher(object):
         query_embedding = self.get_embeddings(chart_paths=[query_chart_path])
         query_embedding = np.array(query_embedding[0].cpu()).astype(np.float32)
         distance, locs = index.search(x=query_embedding, k=num_similar_charts)
-        self.similar_chart_paths = [self.chart_paths[loc] for loc in locs[0]]
-        return self.similar_chart_paths
+        distance_list = [i for i in distance.tolist()[0]]
+        similar_chart_paths = [self.chart_paths[loc] for loc in locs[0]]
+        self.similar_chart_path_and_distance = [i for i in zip(similar_chart_paths, distance_list)]
+        return self.similar_chart_path_and_distance
 
 
 
@@ -220,8 +222,8 @@ import yfinance as yf
 import plotly.express as px
 
 stock = yf.Ticker("IONQ")
-start="2025-03-06"
-end="2025-03-07"
+start="2025-03-11"
+end="2025-03-12"
 save_path = f"ionq_{start}_to_{end}.png"
 #%%
 hist = stock.history(start=start, 
@@ -256,7 +258,7 @@ Image.open(save_path)
 
 #%%
 
-Image.open(ionq_simimgs[2])
+Image.open(ionq_simimgs[5])
 
 # %%
 import torch
