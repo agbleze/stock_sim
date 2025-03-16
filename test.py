@@ -28,5 +28,5 @@ fig.write_image(save_path)
 
 
 # %%
-def get_most_unique_imgs(img_paths):
+def get_most_unique_imgs(img_paths, similar_searcher):
     pass
