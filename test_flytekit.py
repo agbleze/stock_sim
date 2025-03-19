@@ -6,7 +6,7 @@ def hello() -> str:
     return "Hello, World"
 
 @workflow
-def hello_wf():
+def hello_wf() -> str:
     res = hello()
     return res
 
