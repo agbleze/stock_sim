@@ -33,5 +33,20 @@ def get_most_unique_imgs(img_paths, similar_searcher):
 
 
 
+#%%
+
+from faiss import read_index
+
+#%%
+
+vector_index_path = "/home/lin/codebase/stock_sim/vector_index.faiss"
+
+vector_rd = read_index(vector_index_path)
+
+#%%
+
+vector_rd
+#%%
 # TODO
 'experiment with chroma'
+# %%
