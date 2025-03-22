@@ -275,8 +275,7 @@ print(numpy_array)
 # %%
 import faiss                   # make faiss available
 index = faiss.IndexFlatL2(d)   # build the index
-print(index.is_trained)
-index.add(xb)                  # add vectors to the index
+print(index.is_trained)           # add vectors to the index
 print(index.ntotal)
 # %%
 faiss.index_cpu_to_gpus_list()
